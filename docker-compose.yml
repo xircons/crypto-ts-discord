@@ -1,0 +1,59 @@
+version: '3.9'
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: valorant_tournament
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  backend:
+    build: ./backend
+    environment:
+      PORT: 4000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: valorant_tournament
+      ENABLE_AUTH: 'true'
+      ADMIN_USER: staff
+      ADMIN_PASS: valorant_tournament_staff
+      JWT_SECRET: 9f8a1e2b4c5d6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a
+    depends_on:
+      - db
+    ports:
+      - "4000:4000"
+
+  bot:
+    build: ./bot
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      API_BASE_URL: http://backend:4000
+      GUILD_ID: ${GUILD_ID}
+      MATCH_ANNOUNCE_CHANNEL_ID: ${MATCH_ANNOUNCE_CHANNEL_ID}
+      RESULT_CATEGORY_ID: ${RESULT_CATEGORY_ID}
+      STAFF_ROLE_ID: ${STAFF_ROLE_ID}
+      TICKET_CATEGORY_ID: ${TICKET_CATEGORY_ID}
+    depends_on:
+      - backend
+
+  web:
+    build: ./web
+    environment:
+      VITE_API_BASE_URL: http://localhost:4000
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+
+

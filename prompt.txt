@@ -1,0 +1,127 @@
+You are an expert Full-Stack Developer + Discord Bot Engineer + QA Tester. 
+Your job is to build a **production-ready Valorant Tournament system** including:
+
+1. **Discord Bot** (Node.js, discord.js, slash commands, buttons, modals, embeds)
+2. **Web App** (React + Vite frontend, React + CSS, Node.js/Express backend)
+3. **Database** (MySQL [XAMPP], UTF8MB4)
+4. **Integration**: Web ↔ Backend ↔ Discord Bot ↔ Database
+
+---
+
+### **System Requirements**
+
+#### **Player & Team Registration**
+- Players can register: Name, IGN, Discord ID, Riot ID, eligibility proof (screenshot)
+- Admin approves/rejects players
+- Approved players can form teams: team name, logo, roster
+- Discord Bot:
+    - Auto-create Team Role for captain
+    - Auto-assign role to team players
+
+#### **Scheduling System**
+- Admin can generate matches:
+    - Teams are **randomly paired**
+    - Admin chooses **match time**
+- Bot announces upcoming match **24h before** in Discord text channel
+- Bot sends reminder **30min before** match
+
+#### **Discord Bot Features**
+- Slash commands:
+    - /register-team → create team, add players
+    - /match schedule → set match time (admin)
+    - /match result → submit result with proof screenshot
+    - /substitute → request player substitution
+- Auto-create match channels (voice + text)
+- Auto close/archive channels after match
+- Support ticket system: Button → Open private channel with staff
+
+#### **Match Result System**
+- Teams upload result screenshot
+- Admin confirms win/loss
+- Bot updates bracket in Discord
+- Result stored in DB → displayed in Web App
+
+#### **Bracket & Tournament Flow**
+- Default: single-elimination
+- Optional: double-elimination
+- Web App displays bracket (React + CSS)
+- Bot announces bracket updates in Discord (Result Discord text channel)
+
+#### **Substitution System**
+- Team captain can request substitution via Bot or Web
+- Admin approves/rejects
+- Update roster in DB + Discord role
+
+#### **Web App Features**
+- Player/Team Registration Form
+- Admin Dashboard:
+    - Approve players
+    - Create matches
+    - Approve results
+- Public Bracket View
+- Match Schedule Page
+- Result Archive
+- Live Updates via WebSocket
+
+#### **Backend & API**
+- REST API with JWT auth
+- Endpoints:
+    - /register/player
+    - /register/team
+    - /matches/create
+    - /matches/result
+    - /matches/schedule
+    - /bracket
+    - /substitution
+- WebSocket support for live updates
+
+#### **Database Schema**
+- players(id, name, ign, discord_id, riot_id, eligibility_doc, status)
+- teams(id, name, logo, captain_id, players[] as JSON)
+- matches(id, team_a, team_b, round, time, status, result, proof_url)
+- substitutions(id, team_id, old_player, new_player, status)
+
+#### **Testing & QA**
+- Write **unit tests** (Jest for Node.js backend + Discord Bot commands)
+- Write **integration tests** for DB + API
+- Simulate test matches:
+    - Register 4 teams
+    - Auto-generate bracket (single-elimination default)
+    - Schedule matches
+    - Upload results
+    - Update bracket
+    - Validate Web shows correct results
+- Ensure **100% coverage**, **0 failing cases**
+- Debug automatically until all tests pass
+
+---
+
+### **Rules for You (AI)**
+1. Always generate **complete code** (no snippets)
+2. Include **setup instructions** (install, run, config)
+3. Run, debug, test, and fix until 100% passing
+4. Step-by-step execution:
+    - Build code
+    - Run code
+    - Debug errors
+    - Run automated tests
+    - Fix until fully working
+5. Deliverables:
+    - Fully working Discord Bot (Node.js + discord.js)
+    - Fully working Web App (React + Tailwind optional + CSS, Express backend)
+    - Database schema (SQL scripts, MySQL XAMPP UTF8MB4)
+    - Automated tests with 100% pass
+    - Deployment guide (Docker Compose optional)
+
+---
+
+### **Instruction**
+- Start **Step 1**: Backend + DB + Player Registration API + Discord Bot basic connection  
+- After Step 1 works with tests passing, move to Step 2 (Team Registration + Roles)  
+- Continue step-by-step until **full system** is production-ready
+
+- Ensure **environment variables** (Bot Token, DB credentials, JWT Secret) are stored in `.env` file
+
+---
+
+**End of Prompt**

@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# environment
+.env
+.env.*
+backend/.env
+bot/.env
+web/.env
+
+# logs
+logs/
+*.log
+.pids
+
+# coverage
+coverage/
+backend/coverage/
+
+# build outputs
+web/dist/
+web/.vite/
+
+# os files
+.DS_Store
+Thumbs.db
