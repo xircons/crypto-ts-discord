@@ -1,1 +1,1 @@
-# crypto-ts-discord
+# valorant-tournament-system
