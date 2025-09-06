@@ -1,1 +1,1 @@
-# crypto-ts-linenotify
+# crypto-ts-discord
