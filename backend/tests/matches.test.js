@@ -5,57 +5,43 @@ const createRouter = require('../src/routes');
 function createMockApp() {
   const app = express();
   app.use(express.json());
-  const matches = [];
-  let idCounter = 1;
   const pool = {
     async query(sql, params) {
-      if (/^INSERT INTO matches/i.test(sql)) {
-        const [team_a, team_b, round, time] = params;
-        const m = { id: idCounter++, team_a, team_b, round, time: new Date(time), status: 'scheduled' };
-        matches.push(m);
-        return [{ insertId: m.id }];
+      if (/INSERT INTO matches \(challonge_match_id, time\)/i.test(sql) || /ON DUPLICATE KEY UPDATE time/i.test(sql)) {
+        return [{}];
       }
-      if (/SELECT id, team_a, team_b, round, DATE_FORMAT\(time/i.test(sql)) {
-        const rows = matches
-          .filter(m => m.status === 'scheduled' && m.time >= new Date())
-          .sort((a,b)=>a.time-b.time)
-          .map(m => ({
-            id: m.id,
-            team_a: m.team_a,
-            team_b: m.team_b,
-            round: m.round,
-            time: new Date(m.time).toISOString(),
-            status: m.status,
-            result: null,
-            proof_url: null
-          }));
-        return [rows];
-      }
-      throw new Error('Unknown SQL');
+      return [[]];
     }
   };
-  app.use('/', createRouter({ pool }));
+  const challonge = {
+    async listMatches() {
+      return [
+        { id: 101, player1_id: 'p1', player2_id: 'p2', round: 1, scheduled_time: new Date(Date.now() + 3600_000).toISOString() },
+        { id: 102, player1_id: 'p3', player2_id: 'p4', round: 1, scheduled_time: new Date(Date.now() + 7200_000).toISOString() }
+      ];
+    }
+  };
+  app.use('/', createRouter({ pool, challonge }));
   return app;
 }
 
-describe('matches endpoints', () => {
+describe('matches endpoints (Challonge)', () => {
   const app = createMockApp();
-  it('creates a match', async () => {
-    const res = await request(app).post('/matches/create').send({
-      team_a: 'Team A',
-      team_b: 'Team B',
-      round: 'Quarterfinal',
-      time: new Date(Date.now() + 3600_000).toISOString()
-    });
-    expect(res.statusCode).toBe(201);
-    expect(res.body).toHaveProperty('id');
-  });
 
-  it('lists upcoming matches', async () => {
+  it('lists upcoming matches from Challonge', async () => {
     const res = await request(app).get('/matches/upcoming');
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body[0]).toHaveProperty('id');
+    expect(res.body[0]).toHaveProperty('round');
+  });
+
+  it('stores local schedule metadata', async () => {
+    const when = new Date(Date.now() + 3600_000).toISOString();
+    const res = await request(app).post('/matches/schedule').send({ match_id: '101', time: when });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
   });
 });
 

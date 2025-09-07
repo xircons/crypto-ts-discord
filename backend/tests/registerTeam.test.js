@@ -10,7 +10,7 @@ function createMockApp() {
   const pool = {
     async query(sql, params) {
       if (/^INSERT INTO teams/i.test(sql)) {
-        const [name, logo, captain_discord_id, players_json] = params;
+        const [name, logo, captain_discord_id, players_json, challonge_participant_id] = params;
         if (teams.find(t => t.name.toLowerCase() === String(name).toLowerCase())) {
           const err = new Error('Duplicate');
           err.code = 'ER_DUP_ENTRY';
@@ -21,7 +21,8 @@ function createMockApp() {
           name,
           logo: logo || null,
           captain_discord_id,
-          players: JSON.parse(players_json)
+          players: JSON.parse(players_json),
+          challonge_participant_id: challonge_participant_id || null
         };
         teams.push(newTeam);
         return [{ insertId: newTeam.id }];
@@ -29,7 +30,8 @@ function createMockApp() {
       throw new Error('Unknown SQL in mock');
     }
   };
-  app.use('/', createRouter({ pool }));
+  const challonge = { async createParticipant(name) { return { id: 'cp_' + name }; } };
+  app.use('/', createRouter({ pool, challonge }));
   return app;
 }
 
@@ -46,6 +48,7 @@ describe('POST /register/team', () => {
     const res = await request(app).post('/register/team').send(body);
     expect(res.statusCode).toBe(201);
     expect(res.body).toHaveProperty('id');
+    expect(res.body).toHaveProperty('challonge_participant_id');
   });
 
   it('rejects duplicate team name', async () => {

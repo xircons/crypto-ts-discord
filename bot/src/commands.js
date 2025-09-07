@@ -24,10 +24,8 @@ const commands = [
     .addStringOption(o => o.setName('logo').setDescription('Logo URL').setRequired(false)),
   new SlashCommandBuilder()
     .setName('match-schedule')
-    .setDescription('Schedule a match between two teams')
-    .addStringOption(o => o.setName('team_a').setDescription('Team A name').setRequired(true))
-    .addStringOption(o => o.setName('team_b').setDescription('Team B name').setRequired(true))
-    .addStringOption(o => o.setName('round').setDescription('Round label').setRequired(true))
+    .setDescription('[Deprecated] Set local schedule metadata for a Challonge match')
+    .addStringOption(o => o.setName('match_id').setDescription('Challonge match ID').setRequired(true))
     .addStringOption(o => o.setName('time_iso').setDescription('ISO datetime, e.g., 2025-01-31T20:00:00Z').setRequired(true))
   ,
   new SlashCommandBuilder()
@@ -48,7 +46,11 @@ const commands = [
     .setDescription('Post a support ticket button in this channel')
     .addStringOption(o => o.setName('title').setDescription('Panel title').setRequired(false))
     .addStringOption(o => o.setName('description').setDescription('Panel description').setRequired(false))
-    .addStringOption(o => o.setName('button').setDescription('Button label').setRequired(false))
+    .addStringOption(o => o.setName('button').setDescription('Button label').setRequired(false)),
+  new SlashCommandBuilder()
+    .setName('announce-matches')
+    .setDescription('Fetch upcoming Challonge matches and announce the next N (default 3)')
+    .addIntegerOption(o => o.setName('count').setDescription('How many matches to announce').setRequired(false))
 ];
 
 module.exports = { commands };

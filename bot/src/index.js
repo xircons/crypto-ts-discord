@@ -203,25 +203,22 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
   if (interaction.commandName === 'match-schedule') {
-    const team_a = interaction.options.getString('team_a', true);
-    const team_b = interaction.options.getString('team_b', true);
-    const round = interaction.options.getString('round', true);
+    const match_id = interaction.options.getString('match_id', true);
     const time_iso = interaction.options.getString('time_iso', true);
     try {
       await interaction.deferReply({ ephemeral: true });
       if (!process.env.API_BASE_URL) throw new Error('API_BASE_URL not set');
-      const res = await fetch(`${process.env.API_BASE_URL}/matches/create`, {
+      const res = await fetch(`${process.env.API_BASE_URL}/matches/schedule`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ team_a, team_b, round, time: time_iso })
+        body: JSON.stringify({ match_id, time: time_iso })
       });
       if (!res.ok) {
         const text = await res.text();
         throw new Error(`Backend error ${res.status}: ${text}`);
       }
-      const data = await res.json();
       const ts = Math.floor(Date.parse(time_iso) / 1000);
-      await interaction.editReply(`Match scheduled (#${data.id}): ${team_a} vs ${team_b} (${round}) @ <t:${ts}:F> (<t:${ts}:R>)`);
+      await interaction.editReply(`Scheduled match #${match_id} @ <t:${ts}:F> (<t:${ts}:R>)`);
     } catch (err) {
       console.error('match-schedule error', err);
       if (interaction.deferred || interaction.replied) {
@@ -279,8 +276,30 @@ client.on('interactionCreate', async (interaction) => {
       }
     }
   }
-  if (interaction.commandName === 'match-result') {
-    // handled above; additionally no changes here
+  if (interaction.commandName === 'announce-matches') {
+    const count = interaction.options.getInteger('count') || 3;
+    try {
+      await interaction.deferReply({ ephemeral: true });
+      if (!process.env.API_BASE_URL) throw new Error('API_BASE_URL not set');
+      const res = await fetch(`${process.env.API_BASE_URL}/matches/upcoming`);
+      if (!res.ok) throw new Error(`Backend error ${res.status}`);
+      const upcoming = await res.json();
+      const toPost = upcoming.slice(0, Math.max(1, Math.min(count, 10)));
+      const channelId = process.env.MATCH_ANNOUNCE_CHANNEL_ID;
+      for (const m of toPost) {
+        const block = formatMatchBlock(m.round, m.time, m.team_a, m.team_b);
+        await sendToChannelById(interaction.client, channelId, block);
+        await delay(1000);
+      }
+      await interaction.editReply(`Announced ${toPost.length} matches.`);
+    } catch (err) {
+      console.error('announce-matches error', err);
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply('Failed to announce matches.');
+      } else {
+        await interaction.reply({ content: 'Failed to announce matches.', ephemeral: true });
+      }
+    }
   }
   if (interaction.commandName === 'support-panel') {
     const title = interaction.options.getString('title') || process.env.TICKET_PANEL_TITLE || 'Open a Support Ticket';

@@ -5,43 +5,39 @@ const createRouter = require('../src/routes');
 function createMockApp() {
   const app = express();
   app.use(express.json());
-  const matches = [{ id: 1, result: null }];
+  const local = { resultById: {} };
   const pool = {
     async query(sql, params) {
-      if (/UPDATE matches SET result/i.test(sql)) {
-        const [winner, id] = params.length === 2 ? params : [params[0], params[2]];
-        const m = matches.find(mm => mm.id === id);
-        if (!m) return [{ affectedRows: 0 }];
-        m.result = winner;
-        m.status = 'pending_review';
-        return [{ affectedRows: 1 }];
+      if (/INSERT INTO matches \(challonge_match_id, result, status, proof_url_a, proof_url_b\)/i.test(sql)) {
+        const [mid, winner] = params;
+        local.resultById[String(mid)] = winner;
+        return [{}];
       }
-      if (/SELECT result FROM matches/i.test(sql)) {
-        const [id] = params;
-        const m = matches.find(mm => mm.id === id);
-        return [m ? [{ result: m.result }] : []];
+      if (/SELECT result FROM matches WHERE challonge_match_id/i.test(sql)) {
+        const [mid] = params;
+        const r = local.resultById[String(mid)] || null;
+        return [[r ? { result: r } : undefined].filter(Boolean)];
       }
       if (/UPDATE matches SET status = \"completed\"/i.test(sql)) {
-        const [id] = params;
-        const m = matches.find(mm => mm.id === id);
-        if (!m) return [{ affectedRows: 0 }];
-        m.status = 'completed';
-        return [{ affectedRows: 1 }];
+        return [{}];
       }
-      throw new Error('Unknown SQL');
+      return [[]];
     }
   };
-  app.use('/', createRouter({ pool }));
+  const challonge = {
+    async submitMatchResultByWinnerSide(matchId, side) { return { id: matchId, side }; }
+  };
+  app.use('/', createRouter({ pool, challonge }));
   return app;
 }
 
-describe('match results', () => {
+describe('match results (Challonge)', () => {
   const app = createMockApp();
-  it('submits a result and sets pending_review', async () => {
+  it('submits a result and stores awaiting_proof', async () => {
     const res = await request(app).post('/matches/result').send({ match_id: 1, winner: 'A', proof_url: 'https://x/p.png' });
     expect(res.statusCode).toBe(200);
   });
-  it('confirms a result and completes match', async () => {
+  it('confirms a result and syncs Challonge', async () => {
     const res = await request(app).post('/matches/confirm').send({ match_id: 1, confirm: true });
     expect(res.statusCode).toBe(200);
     expect(res.body.result).toBe('A');
